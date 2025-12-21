@@ -33,11 +33,11 @@ const About = () => {
             </p>
           </div>
           <div className="flex-1 w-full">
-<img 
-  src="/public/photo.png" // 👈 المسار بالنسبة للمجلد العام
-  alt="فريق بيت العيلة"
-  className="rounded-2xl shadow-lg w-full h-64 object-cover"
-/>
+        <img 
+          src="/public/photo.png" // 👈 المسار بالنسبة للمجلد العام
+          alt="فريق بيت العيلة"
+          className="rounded-2xl shadow-lg w-full h-64 object-cover"
+        />
           </div>
         </div>
 
