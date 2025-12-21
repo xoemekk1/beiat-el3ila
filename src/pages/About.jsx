@@ -34,7 +34,7 @@ const About = () => {
           </div>
           <div className="flex-1 w-full">
 <img 
-  src="/images/Photo.png" // 👈 المسار بالنسبة للمجلد العام
+  src="/public/photo.png" // 👈 المسار بالنسبة للمجلد العام
   alt="فريق بيت العيلة"
   className="rounded-2xl shadow-lg w-full h-64 object-cover"
 />
