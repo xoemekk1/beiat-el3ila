@@ -2,8 +2,10 @@ import React, { useRef, useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Heart, Plus, Star, Zap } from 'lucide-react'; // ❌ حذفنا Truck
+import { ChevronRight, ChevronLeft, Heart, Plus, Star, Zap } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+// ✅ 1. استيراد البيكسل
+import ReactPixel from 'react-facebook-pixel';
 
 const BestSellers = () => {
   const [products, setProducts] = useState([]);
@@ -28,6 +30,24 @@ const BestSellers = () => {
     if (current) {
       const scrollAmount = direction === 'left' ? -300 : 300; 
       current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  // ✅ 2. دالة إضافة للسلة مع تتبع البيكسل
+  const handleAddToCart = (product) => {
+    // إضافة المنتج للسلة العادية
+    addToCart(product);
+
+    // تتبع البيكسل (Native) لضمان العمل
+    if (window.fbq) {
+        window.fbq('track', 'AddToCart', {
+            content_name: product.name,
+            content_ids: [product.id],
+            content_type: 'product',
+            value: product.price,
+            currency: 'EGP'
+        });
+        console.log("✅ Pixel AddToCart Fired for:", product.name);
     }
   };
 
@@ -91,9 +111,9 @@ const BestSellers = () => {
                         <img src={product.image} alt={product.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-700 ease-in-out" />
                     </Link>
                     
-                    {/* Add Button */}
+                    {/* Add Button - ✅ تم ربطه بدالة التتبع الجديدة */}
                     <button 
-                        onClick={() => addToCart(product)}
+                        onClick={() => handleAddToCart(product)}
                         className="absolute bottom-3 left-3 bg-white border border-gray-200 p-2.5 rounded-full text-gray-700 hover:bg-[#D4AF37] hover:text-black hover:border-[#D4AF37] transition-all shadow-md active:scale-95 z-20"
                     >
                         <Plus size={22} />
@@ -123,7 +143,6 @@ const BestSellers = () => {
                             <span className="text-xl md:text-2xl font-black text-gray-900">{product.price} <span className="text-xs font-normal text-gray-500">ج.م</span></span>
                         </div>
                         
-                        {/* ❌ تم حذف جزء الشحن المجاني من هنا */}
                         {product.oldPrice > 0 && (
                              <div className="flex items-center gap-2 text-[10px] md:text-xs">
                                 <span className="text-gray-400 line-through">{product.oldPrice} ج.م</span>
