@@ -246,6 +246,16 @@ const Checkout = () => {
         }
       }
 
+      // ✅ 3️⃣ فيسبوك بيكسل: تسجيل حدث الشراء (Purchase)
+      ReactPixel.track('Purchase', {
+        value: fullOrderTotal, // القيمة الإجمالية للطلب
+        currency: 'EGP',
+        content_ids: cartItems.map(item => item.id), // مصفوفة IDs المنتجات
+        content_type: 'product',
+        num_items: cartItems.length, // عدد المنتجات
+        order_id: newOrderRef.id // معرف الطلب (لعدم التكرار)
+      });
+
       // ... (Notifications & Pixel) ...
       setSuccess(true);
       clearCart();

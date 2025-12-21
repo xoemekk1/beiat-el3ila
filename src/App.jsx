@@ -31,6 +31,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
 // --- مكون الحماية الصارم (Admin Only) ---
+import FacebookPixel from './utils/FacebookPixel';
+
 const AdminRoute = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -86,6 +88,9 @@ function App() {
       <Router>
         <ScrollToTop /> {/* تشغيل السكرول للأعلى عند تغيير الصفحة */}
         
+        {/* ✅ تشغيل فيسبوك بيكسل هنا */}
+        <FacebookPixel /> 
+
         <div dir="rtl" className="font-sans text-gray-800 bg-[#f9fafb] min-h-screen flex flex-col">
           <Navbar />
           
