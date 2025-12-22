@@ -105,10 +105,14 @@ const BestSellers = () => {
                     <Heart size={20} className={isLoved ? "fill-red-500 text-red-500" : ""} />
                   </button>
 
-                  {/* Image Area */}
-                  <div className="relative h-56 md:h-64 p-6 bg-gray-50 flex items-center justify-center overflow-hidden">
+                  {/* Image Area - ✅ تم التعديل هنا لملء الكارت والزوم */}
+                  <div className="relative h-64 md:h-72 bg-gray-50 flex items-center justify-center overflow-hidden">
                     <Link to={`/product/${product.id}`} className="w-full h-full block">
-                        <img src={product.image} alt={product.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-700 ease-in-out" />
+                        <img 
+                            src={product.image} 
+                            alt={product.name} 
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out" 
+                        />
                     </Link>
                     
                     {/* Add Button - ✅ تم ربطه بدالة التتبع الجديدة */}

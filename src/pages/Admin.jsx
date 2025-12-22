@@ -8,7 +8,7 @@ import {
   ShoppingBag, Plus, X, Users, Phone, MapPin, Calendar, Clock, 
   List, Truck, Search, MessageSquare, Bell, DollarSign, Loader, LayoutTemplate, Image as ImageIcon, Palette, Ruler,
   TicketPercent, Star, Check, EyeOff, Monitor, Wallet, Banknote, ExternalLink, Save, ArrowLeft, ArrowRight, Mail, User, Ban, Unlock, Pencil,
-  History, CalendarClock, TrendingUp // ✅ Added TrendingUp icon
+  History, CalendarClock, TrendingUp, ChevronLeft, ChevronRight // ✅ Added Icons for image sorting
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -49,11 +49,11 @@ const Admin = () => {
 
   // Hero Settings
   const [heroSettings, setHeroSettings] = useState({ title1: '', title2: '', description: '', image: null, imageUrl: '', imageFit: 'cover' });
-   
+    
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
-   
+    
   const [editMode, setEditMode] = useState(false);
   const [currentId, setCurrentId] = useState(null);
 
@@ -280,7 +280,22 @@ const Admin = () => {
   };
 
   const handleImagesChange = (e) => { if (e.target.files) setProduct({ ...product, images: Array.from(e.target.files) }); };
-   
+
+  // ✅ New Functions for Image Reordering (Feature 1)
+  const moveImageLeft = (index) => {
+    if (index === 0) return;
+    const newUrls = [...product.imageUrls];
+    [newUrls[index - 1], newUrls[index]] = [newUrls[index], newUrls[index - 1]];
+    setProduct({ ...product, imageUrls: newUrls });
+  };
+
+  const moveImageRight = (index) => {
+    if (index === product.imageUrls.length - 1) return;
+    const newUrls = [...product.imageUrls];
+    [newUrls[index + 1], newUrls[index]] = [newUrls[index], newUrls[index + 1]];
+    setProduct({ ...product, imageUrls: newUrls });
+  };
+    
   // ✅ Updated Product Submit Handler (Includes costPrice)
   const handleProductSubmit = async (e) => {
     e.preventDefault(); setLoading(true); setError(''); setSuccess('');
@@ -289,13 +304,16 @@ const Admin = () => {
       if (product.images && product.images.length > 0) {
         const uploadPromises = product.images.map(file => uploadImage(file));
         const newUrls = await Promise.all(uploadPromises);
-        finalImageUrls = editMode ? [...finalImageUrls, ...newUrls] : newUrls;
+        // editMode Logic: If editing, just append new ones. 
+        // Note: The 'finalImageUrls' variable already has the current (potentially reordered) list.
+        finalImageUrls = [...finalImageUrls, ...newUrls];
       }
+      
       if (finalImageUrls.length === 0) throw new Error("يجب إضافة صورة واحدة على الأقل");
-       
+        
       const colorsArray = product.colors ? String(product.colors).split(',').map(c => c.trim()).filter(c => c) : [];
       const sizesArray = product.sizes ? String(product.sizes).split(',').map(s => s.trim()).filter(s => s) : [];
-       
+        
       const productData = {
         name: product.name, 
         price: Number(product.price), 
@@ -303,8 +321,8 @@ const Admin = () => {
         costPrice: Number(product.costPrice) || 0, // ✅ Saving cost price
         category: product.category, 
         description: product.description, 
-        image: finalImageUrls[0], 
-        images: finalImageUrls,
+        image: finalImageUrls[0], // First image is main
+        images: finalImageUrls, // All images (ordered)
         colors: colorsArray, 
         sizes: sizesArray, 
         discountEnd: product.discountEnd ? new Date(product.discountEnd) : null,
@@ -315,7 +333,7 @@ const Admin = () => {
 
       if (editMode) { await updateDoc(doc(db, "products", currentId), productData); setSuccess("تم التحديث"); } 
       else { await addDoc(collection(db, "products"), { ...productData, createdAt: new Date() }); setSuccess("تمت الإضافة"); }
-       
+        
       setEditMode(false); setCurrentId(null);
       setProduct({ name: '', price: '', oldPrice: '', costPrice: '', category: '', description: '', images: [], imageUrls: [], colors: '', sizes: '', discountEnd: '', stock: '', maxLimit: 10 });
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -364,7 +382,7 @@ const Admin = () => {
   const handleDeleteCategory = async (id) => { if (window.confirm("حذف التصنيف؟")) await deleteDoc(doc(db, "categories", id)); };
   const handleDeleteOrder = async (id) => { if (window.confirm("حذف الطلب؟")) await deleteDoc(doc(db, "orders", id)); };
   const handleDeleteMessage = async (id) => { if (window.confirm("حذف الرسالة؟")) await deleteDoc(doc(db, "contact_messages", id)); };
-   
+    
   const initiateStatusChange = (id, newStatus) => {
     if (newStatus === 'shipped' || newStatus === 'on_delivery') {
         setShippingData({ orderId: id, status: newStatus, courier: 'bosta', trackingNumber: '' });
@@ -386,7 +404,7 @@ const Admin = () => {
       setShowShippingModal(false);
       setShippingData({ orderId: null, status: '', courier: 'bosta', trackingNumber: '' });
   };
-   
+    
   const handlePaymentStatusChange = async (order) => {
       const newStatus = !order.isPaid;
       await updateDoc(doc(db, "orders", order.id), { isPaid: newStatus });
@@ -803,7 +821,7 @@ const Admin = () => {
           </div>
         )}
 
-        {/* ✅ Products Tab (Updated with Cost Price) */}
+        {/* ✅ Products Tab (Updated with Cost Price & Image Reordering & Full/Zoom Images) */}
         {activeTab === 'products' && (
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
@@ -844,9 +862,24 @@ const Admin = () => {
                             <input type="file" multiple ref={fileInputRef} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleImagesChange} />
                             <div className="flex flex-col items-center text-gray-400 group-hover:text-accent"><Upload size={32} className="mb-2" /><span className="text-xs font-bold">اضغط لرفع الصور</span></div>
                         </div>
-                        <div className="flex gap-2 overflow-x-auto pb-2">
-                            {product.imageUrls && product.imageUrls.map((url, idx) => (<img key={`old-${idx}`} src={url} className="w-16 h-16 rounded-lg object-cover border border-gray-200 shrink-0" />))}
-                            {product.images && product.images.map((file, idx) => (<img key={`new-${idx}`} src={URL.createObjectURL(file)} className="w-16 h-16 rounded-lg object-cover border border-accent shrink-0" />))}
+                        {/* ✅ Image Sorting & Zoom Section */}
+                        <div className="flex gap-2 overflow-x-auto pb-2 min-h-[90px]">
+                            {product.imageUrls && product.imageUrls.map((url, idx) => (
+                                <div key={`old-${idx}`} className="relative group w-20 h-20 shrink-0 border border-gray-200 rounded-lg overflow-hidden">
+                                    <img src={url} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-125" />
+                                    {/* Sort Controls Overlay */}
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between px-1">
+                                        <button type="button" onClick={() => moveImageRight(idx)} className="bg-white/80 p-1 rounded-full hover:bg-white text-gray-800"><ChevronRight size={14}/></button>
+                                        <button type="button" onClick={() => moveImageLeft(idx)} className="bg-white/80 p-1 rounded-full hover:bg-white text-gray-800"><ChevronLeft size={14}/></button>
+                                    </div>
+                                    {idx === 0 && <span className="absolute top-0 right-0 bg-accent text-white text-[9px] px-1 rounded-bl">Main</span>}
+                                </div>
+                            ))}
+                            {product.images && product.images.map((file, idx) => (
+                                <div key={`new-${idx}`} className="w-20 h-20 shrink-0 border border-accent rounded-lg overflow-hidden relative group">
+                                    <img src={URL.createObjectURL(file)} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-125" />
+                                </div>
+                            ))}
                         </div>
                         <div className="flex gap-3 pt-2">
                             <button type="submit" disabled={loading} className="flex-1 bg-primary text-white py-4 rounded-xl font-bold hover:bg-gray-800 transition-all">{loading ? 'جاري الحفظ...' : editMode ? 'تحديث' : 'نشر'}</button>
@@ -861,7 +894,12 @@ const Admin = () => {
                     <tbody>
                         {products.map(p => (
                             <tr key={p.id} className="hover:bg-gray-50 transition-colors group border-t">
-                                <td className="p-4 w-20"><img src={p.image || 'https://via.placeholder.com/150'} className="w-12 h-12 rounded-lg object-cover bg-gray-100" /></td>
+                                {/* ✅ Full Image in Card + Hover Zoom */}
+                                <td className="p-4 w-24">
+                                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shadow-sm border border-gray-200">
+                                        <img src={p.image || 'https://via.placeholder.com/150'} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-150 origin-center" />
+                                    </div>
+                                </td>
                                 <td className="p-4">
                                     <p className="font-bold text-primary text-lg">{p.name}</p>
                                     <div className="flex gap-2 mt-1">
@@ -901,7 +939,14 @@ const Admin = () => {
              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {categories.map(c => (
                     <div key={c.id} className="flex flex-col items-center p-4 bg-gray-50 rounded-2xl border border-gray-200 hover:border-accent group relative transition-all">
-                        <div className="w-16 h-16 rounded-full overflow-hidden bg-white border border-gray-200 mb-2 shadow-sm">{c.imageUrl ? <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><ImageIcon /></div>}</div>
+                        {/* ✅ Category Image Full Cover + Zoom */}
+                        <div className="w-16 h-16 rounded-full overflow-hidden bg-white border border-gray-200 mb-2 shadow-sm relative">
+                            {c.imageUrl ? (
+                                <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-125" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-300"><ImageIcon /></div>
+                            )}
+                        </div>
                         <span className="font-bold text-gray-700">{c.name}</span>
                         <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => handleEditCategory(c)} className="text-blue-500 hover:text-blue-600 bg-white rounded-full p-1 shadow-sm"><Edit size={16} /></button><button onClick={() => handleDeleteCategory(c.id)} className="text-red-400 hover:text-red-600 bg-white rounded-full p-1 shadow-sm"><Trash2 size={16} /></button></div>
                     </div>

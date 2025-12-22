@@ -196,6 +196,7 @@ const Home = () => {
 
 
       {/* ==================== 5. وصل حديثاً ==================== */}
+{/* ==================== 5. وصل حديثاً ==================== */}
       <section className="py-24 bg-[#F8F9FA] rounded-t-[3rem] border-t border-gray-100 relative z-10">
         <div className="container mx-auto px-6">
           <div className="flex justify-between items-center mb-12">
@@ -221,8 +222,13 @@ const Home = () => {
                     initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                     className="group bg-white rounded-[1.5rem] p-4 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-50"
                   >
+                    {/* ✅ التعديل تم هنا في الصورة */}
                     <div className="relative aspect-[3/4] mb-4 overflow-hidden rounded-[1rem] bg-gray-50">
-                        <img src={product.image} alt={product.name} className="w-full h-full object-contain p-4 mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />
+                        <img 
+                            src={product.image} 
+                            alt={product.name} 
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                        />
                         
                         <button className="absolute bottom-3 right-3 bg-black text-white p-3 rounded-full opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 shadow-lg">
                             <ShoppingBag size={18} />

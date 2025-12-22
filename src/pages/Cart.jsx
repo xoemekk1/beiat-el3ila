@@ -44,9 +44,13 @@ const Cart = () => {
                 key={item.cartId} 
                 className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex gap-4 md:gap-6 items-center"
               >
-                {/* صورة المنتج (قابلة للضغط) */}
+                {/* ✅ صورة المنتج المعدلة (Full Cover) */}
                 <Link to={`/product/${item.id}`} className="shrink-0 w-24 h-24 md:w-32 md:h-32 bg-gray-50 rounded-xl overflow-hidden border border-gray-100 hover:opacity-90 transition-opacity">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-contain p-2 mix-blend-multiply" />
+                  <img 
+                    src={item.image} 
+                    alt={item.name} 
+                    className="w-full h-full object-cover" 
+                  />
                 </Link>
 
                 <div className="flex-1">

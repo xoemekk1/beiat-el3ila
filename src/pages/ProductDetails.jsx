@@ -7,15 +7,15 @@ import { ShoppingCart, Star, Truck, ShieldCheck, Minus, Plus, Heart, Flame, XCir
 import { motion } from 'framer-motion';
 import ReactPixel from 'react-facebook-pixel';
 import Reviews from '../components/Reviews';
-import ProductCard from '../components/ProductCard'; // ✅ استيراد كارت المنتج
-import ProductSkeleton from '../components/ProductSkeleton'; // ✅ استيراد السكيليتون
+import ProductCard from '../components/ProductCard'; 
+import ProductSkeleton from '../components/ProductSkeleton'; 
 
 const ProductDetails = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [relatedProducts, setRelatedProducts] = useState([]); // ✅ حالة المنتجات المشابهة
-  const [relatedLoading, setRelatedLoading] = useState(true); // ✅ تحميل المنتجات المشابهة
+  const [relatedProducts, setRelatedProducts] = useState([]); 
+  const [relatedLoading, setRelatedLoading] = useState(true); 
 
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState('');
@@ -24,13 +24,15 @@ const ProductDetails = () => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [isExpired, setIsExpired] = useState(false);
 
+  // ✅ 1. حالة جديدة لتتبع إحداثيات الزوم
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+
   const { addToCart, toggleWishlist, isInWishlist } = useCart();
 
   // 1. جلب المنتج الأساسي
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    // تصفير البيانات القديمة عند تغيير الـ ID
     setProduct(null);
     setRelatedProducts([]);
     
@@ -38,13 +40,12 @@ const ProductDetails = () => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             setProduct({ id: docSnap.id, ...data });
-            setActiveImage(data.image); // تحديث الصورة
+            setActiveImage(data.image); 
             
             if (data.discountEnd) {
                 const end = data.discountEnd.seconds ? new Date(data.discountEnd.seconds * 1000) : new Date(data.discountEnd);
                 if (new Date() > end) setIsExpired(true);
             }
-            // بيكسل فيسبوك
             ReactPixel.track('ViewContent', { content_name: data.name, content_id: docSnap.id, value: data.price, currency: 'EGP' });
             setLoading(false);
         } else {
@@ -52,20 +53,18 @@ const ProductDetails = () => {
         }
     });
 
-    // سكرول لأعلى الصفحة عند فتح منتج جديد
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     return () => unsub();
   }, [id]);
 
-  // 2. جلب المنتجات ذات الصلة (Related Products)
+  // 2. جلب المنتجات ذات الصلة
   useEffect(() => {
     if (!product || !product.category) return;
 
     const fetchRelated = async () => {
         setRelatedLoading(true);
         try {
-            // جلب منتجات من نفس القسم (بحد أقصى 5 عشان لو شلنا الحالي يتبقى 4)
             const q = query(
                 collection(db, "products"), 
                 where("category", "==", product.category),
@@ -74,8 +73,8 @@ const ProductDetails = () => {
             const snapshot = await getDocs(q);
             const related = snapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
-                .filter(item => item.id !== product.id) // استبعاد المنتج الحالي
-                .slice(0, 4); // عرض 4 فقط
+                .filter(item => item.id !== product.id) 
+                .slice(0, 4); 
 
             setRelatedProducts(related);
         } catch (err) {
@@ -86,7 +85,7 @@ const ProductDetails = () => {
     };
 
     fetchRelated();
-  }, [product]); // يشتغل لما المنتج الأساسي يتحمل
+  }, [product]); 
 
   // 3. التايمر
   useEffect(() => {
@@ -109,7 +108,20 @@ const ProductDetails = () => {
     return () => clearInterval(interval);
   }, [product]);
 
-  // ✅ عرض الـ Skeleton أثناء التحميل بدل الشاشة البيضاء
+  // ✅ 4. دالة التعامل مع حركة الماوس للزوم
+  const handleMouseMove = (e) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    // حساب النسبة المئوية لمكان الماوس داخل الصورة
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    setZoomPos({ x, y });
+  };
+
+  // ✅ 5. إعادة الصورة لوضعها الطبيعي عند خروج الماوس
+  const handleMouseLeave = () => {
+    setZoomPos({ x: 50, y: 50 });
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-[#f9fafb] pt-28 pb-20 container mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -150,9 +162,26 @@ const ProductDetails = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-8">
             {/* Gallery */}
             <div className="p-6 lg:p-10 bg-gray-50 flex flex-col items-center">
-               <motion.div key={activeImage} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full aspect-square max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center p-4 mb-6">
-                 <img src={activeImage} alt={product.name} className="max-w-full max-h-full object-contain mix-blend-multiply" />
+               
+               {/* ✅ منطقة الصورة الرئيسية المعدلة (Full Cover + Zoom) */}
+               <motion.div 
+                 key={activeImage} 
+                 initial={{ opacity: 0 }} 
+                 animate={{ opacity: 1 }} 
+                 className="relative w-full aspect-square max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6 group cursor-zoom-in"
+                 onMouseMove={handleMouseMove}
+                 onMouseLeave={handleMouseLeave}
+               >
+                 <img 
+                    src={activeImage} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover transition-transform duration-200 ease-out group-hover:scale-150"
+                    style={{ 
+                        transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`
+                    }} 
+                 />
                </motion.div>
+
                <div className="flex gap-3 overflow-x-auto w-full justify-center pb-2 no-scrollbar">
                  {gallery.map((img, idx) => (
                    <button key={idx} onClick={() => setActiveImage(img)} className={`w-20 h-20 rounded-xl border-2 overflow-hidden flex-shrink-0 transition-all ${activeImage === img ? 'border-primary' : 'border-transparent'}`}><img src={img} className="w-full h-full object-cover" /></button>
@@ -233,7 +262,7 @@ const ProductDetails = () => {
           <div className="border-t border-gray-100"><Reviews productId={product.id} /></div>
         </div>
 
-        {/* ✅ قسم المنتجات ذات الصلة (جديد) */}
+        {/* قسم المنتجات ذات الصلة */}
         <div className="mb-16">
             <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-2 border-r-4 border-accent pr-4">
                 منتجات قد تعجبك
