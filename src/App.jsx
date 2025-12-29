@@ -25,6 +25,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
 import FacebookPixel from './utils/FacebookPixel';
+import { put } from "@vercel/blob";
+const { url } = await put('articles/blob.txt', 'Hello World!', { access: 'public' });
 
 const AdminRoute = ({ children }) => {
   const [user, setUser] = useState(null);
