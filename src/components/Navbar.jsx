@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { ShoppingBag, Heart, User, Search, Menu, X, LogOut, ChevronDown } from 'lucide-react';
+import { 
+  ShoppingBag, 
+  Heart, 
+  User, 
+  Search, 
+  Menu, 
+  X, 
+  LogOut, 
+  ChevronDown, 
+  MessageCircle // تم إضافة أيقونة الشات هنا
+} from 'lucide-react';
 import { auth, db } from '../firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
@@ -84,12 +94,14 @@ const Navbar = () => {
     <nav className={navbarClasses} dir="rtl">
       <div className="container mx-auto px-4 md:px-8 flex justify-between items-center relative">
         
+        {/* Logo */}
         <Link to="/" className="text-2xl md:text-4xl font-black tracking-tight flex items-center gap-1 group z-50 leading-none">
           <ShoppingBag className="text-[#D4AF37] group-hover:rotate-12 transition-transform" size={32} />
           <span className="text-gray-900">بيت</span>
           <span className="text-[#D4AF37]">العيلة</span>
         </Link>
 
+        {/* Desktop Navigation Links */}
         <div className="hidden md:flex items-center gap-8">
           <NavLink to="/">الرئيسية</NavLink>
           
@@ -140,10 +152,19 @@ const Navbar = () => {
           <NavLink to="/contact">اتصل بنا</NavLink>
         </div>
 
+        {/* Icons Section (Desktop & Mobile Mixed) */}
         <div className="flex items-center gap-2 md:gap-4 z-50">
           <Link to="/search" className="p-1 text-gray-900 hover:text-[#D4AF37] transition-colors hidden md:block">
             <Search size={26} />
           </Link>
+
+          {/* أيقونة الشات الجديدة */}
+          {user && (
+            <Link to="/chat" className="p-1 text-gray-900 hover:text-[#D4AF37] transition-colors relative">
+              <MessageCircle size={26} />
+              {/* يمكنك إضافة badge هنا لاحقاً للإشعارات */}
+            </Link>
+          )}
 
           {isAdmin && (
             <Link to="/admin" className="p-1 text-gray-900 hover:text-[#D4AF37] transition-colors font-bold hidden md:block bg-gray-100 rounded-full px-3 text-xs">
@@ -185,6 +206,7 @@ const Navbar = () => {
         </div>
       </div>
 
+      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div 
@@ -212,7 +234,16 @@ const Navbar = () => {
               
               <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gray-100">
                   <Link to="/search" className="flex items-center gap-3 text-gray-700 hover:text-[#D4AF37] p-3 text-lg font-bold"><Search size={24}/> بحث</Link>
+                  
+                  {/* إضافة الشات في قائمة الموبايل أيضاً */}
+                  {user && (
+                    <Link to="/chat" className="flex items-center gap-3 text-gray-700 hover:text-[#D4AF37] p-3 text-lg font-bold">
+                      <MessageCircle size={24}/> المحادثات
+                    </Link>
+                  )}
+
                   {isAdmin && <Link to="/admin" className="flex items-center gap-3 text-[#D4AF37] font-bold p-3 bg-[#D4AF37]/10 rounded-lg text-lg">لوحة التحكم</Link>}
+                  
                   {user ? (
                       <>
                         <Link to="/profile" className="flex items-center gap-3 text-gray-700 hover:text-[#D4AF37] p-3 text-lg font-bold"><User size={24}/> حسابي ({user.displayName?.split(' ')[0]})</Link>
