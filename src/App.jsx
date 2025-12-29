@@ -25,7 +25,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
 import FacebookPixel from './utils/FacebookPixel';
-import Chat from './pages/Chat';
+
 const AdminRoute = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -96,7 +96,6 @@ function App() {
               <Route path="/policy" element={<Policy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/chat" element={<Chat />} />
               <Route 
                 path="/admin" 
                 element={
