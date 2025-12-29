@@ -2,14 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { db, auth, storage } from '../firebase';
 import { 
   collection, addDoc, query, where, orderBy, onSnapshot, 
-  serverTimestamp, getDocs, doc, getDoc
+  serverTimestamp, getDocs, doc, getDoc, limit, deleteDoc 
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   Send, Image as ImageIcon, Users, User, Plus, 
-  MessageCircle, X, Loader, Search, CheckCheck 
+  MessageCircle, X, Loader, Search, CheckCheck, ChevronLeft, Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const Chat = () => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -21,47 +22,57 @@ const Chat = () => {
   const [newMessage, setNewMessage] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true); // لمنع القفل السريع
+  const [authLoading, setAuthLoading] = useState(true); 
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-
+  
+  const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // تحديث دالة التمرير لتقبل نوع الحركة (smooth أو auto)
+  const scrollToBottom = (behavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
-  // 1. إدارة حالة المستخدم والتحقق من الصلاحيات
+  // 1. مراقبة حالة المستخدم وجلب الصلاحيات
   useEffect(() => {
-    const unsubscribeAuth = auth.onAuthStateChanged(async (u) => {
-      if (u) {
-        setCurrentUser(u);
-        const userDoc = await getDoc(doc(db, "users", u.uid));
-        if (userDoc.exists() && userDoc.data().role === 'admin') {
-          setIsAdmin(true);
+    const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        setCurrentUser(user);
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists() && userDoc.data().role === 'admin') {
+            setIsAdmin(true);
+          }
+        } catch (err) {
+          console.error("Error fetching role:", err);
         }
       } else {
-        setCurrentUser(null);
+        navigate('/login');
       }
       setAuthLoading(false);
     });
 
     return () => unsubscribeAuth();
-  }, []);
+  }, [navigate]);
 
-  // 2. جلب المستخدمين والمجموعات (مرة واحدة أو عند التغيير)
+  // 2. جلب القوائم مع تطبيق منطق الخصوصية
   useEffect(() => {
     if (!currentUser) return;
 
-    // جلب المستخدمين
     const unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
       const usersData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      setUsers(usersData.filter(u => u.id !== currentUser.uid));
+      
+      // العميل يرى الأدمن فقط، والأدمن يرى الجميع
+      if (isAdmin) {
+        setUsers(usersData.filter(u => u.id !== currentUser.uid));
+      } else {
+        setUsers(usersData.filter(u => u.role === 'admin'));
+      }
     });
 
-    // جلب المجموعات التي أنا عضو فيها
     const qGroups = query(collection(db, "groups"), where("members", "array-contains", currentUser.uid));
     const unsubscribeGroups = onSnapshot(qGroups, (snapshot) => {
       setGroups(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -71,21 +82,18 @@ const Chat = () => {
       unsubscribeUsers();
       unsubscribeGroups();
     };
-  }, [currentUser]);
+  }, [currentUser, isAdmin]);
 
-  // 3. نظام جلب الرسائل المطور (حل مشكلة الاختفاء)
+  // 3. جلب الرسائل وإصلاح مشكلة "القفزة المستفزة"
   useEffect(() => {
     if (!activeChat || !currentUser) {
-        setMessages([]);
-        return;
+      setMessages([]);
+      return;
     }
 
-    let chatId;
-    if (activeChat.type === 'group') {
-      chatId = activeChat.id; // للمجموعات نستخدم الـ ID الخاص بالمجموعة
-    } else {
-      chatId = [currentUser.uid, activeChat.id].sort().join("_"); // للشات الخاص ندمج الـ IDs مرتبة
-    }
+    const chatId = activeChat.type === 'group' 
+      ? activeChat.id 
+      : [currentUser.uid, activeChat.id].sort().join("_");
 
     const qMessages = query(
       collection(db, "messages"), 
@@ -95,16 +103,24 @@ const Chat = () => {
 
     const unsubscribeMessages = onSnapshot(qMessages, (snapshot) => {
       const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      // هل هذه هي المرة الأولى لفتح هذه المحادثة؟
+      const isSwitchingChat = messages.length === 0;
+
       setMessages(msgs);
-      setTimeout(scrollToBottom, 100);
-    }, (error) => {
-      console.error("Firestore OrderBy Error: يرجى تفعيل الـ Index من الرابط في الـ console", error);
+
+      // التمرير التلقائي: لحظي عند التبديل، وانسيابي عند وصول رسالة جديدة
+      if (isSwitchingChat) {
+        setTimeout(() => scrollToBottom("auto"), 50);
+      } else {
+        setTimeout(() => scrollToBottom("smooth"), 50);
+      }
     });
 
     return () => unsubscribeMessages();
   }, [activeChat, currentUser]);
 
-  // 4. إرسال الرسائل (حل مشكلة الـ Null Timestamp)
+  // 4. إرسال الرسالة
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if ((!newMessage.trim() && !imageFile) || !currentUser || !activeChat) return;
@@ -122,24 +138,33 @@ const Chat = () => {
         ? activeChat.id 
         : [currentUser.uid, activeChat.id].sort().join("_");
 
-      const messageData = {
+      await addDoc(collection(db, "messages"), {
         chatId,
         senderId: currentUser.uid,
         senderName: currentUser.displayName || "مستخدم",
         text: newMessage,
         imageUrl,
-        createdAt: serverTimestamp(), // يتم استبداله بالسيرفر
-      };
-
-      await addDoc(collection(db, "messages"), messageData);
+        createdAt: serverTimestamp(),
+      });
 
       setNewMessage("");
       setImageFile(null);
     } catch (err) {
       console.error("Send error:", err);
-      alert("حدث خطأ أثناء الإرسال!");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 5. حذف الرسالة (للأدمن فقط)
+  const handleDeleteMessage = async (messageId) => {
+    if (!isAdmin) return;
+    if (window.confirm("هل تريد حذف هذه الرسالة نهائياً؟")) {
+      try {
+        await deleteDoc(doc(db, "messages", messageId));
+      } catch (err) {
+        console.error("Delete error:", err);
+      }
     }
   };
 
@@ -158,182 +183,222 @@ const Chat = () => {
       setSelectedUsers([]);
       setActiveChat({ id: groupRef.id, name: newGroupName, type: 'group' });
     } catch (err) {
-      console.error("Group creation error:", err);
+      console.error("Group error:", err);
     } finally {
       setLoading(false);
     }
   };
 
   if (authLoading) return (
-    <div className="h-screen flex items-center justify-center bg-gray-50 flex-col gap-4">
-      <Loader className="animate-spin text-primary" size={40} />
-      <p className="font-bold text-gray-500">جاري تحميل المحادثات...</p>
+    <div className="h-screen flex items-center justify-center bg-[#f8f9fa] flex-col gap-4">
+      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      <p className="font-bold text-gray-500 italic">جاري تهيئة بيئة التواصل...</p>
     </div>
   );
 
-  if (!currentUser) return <div className="h-screen flex items-center justify-center font-bold">يرجى تسجيل الدخول للوصول للشات.</div>;
-
   return (
-    <div className="flex h-screen pt-20 bg-gray-100 font-sans overflow-hidden" dir="rtl">
-      {/* القائمة الجانبية */}
-      <div className="w-full md:w-80 lg:w-96 bg-white border-l border-gray-200 flex flex-col shadow-sm">
-        <div className="p-4 bg-primary text-white">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-black">بيت العيلة Chat</h2>
-            {isAdmin && (
-              <button onClick={() => setShowCreateGroup(true)} className="p-2 hover:bg-white/10 rounded-full">
-                <Plus size={24} />
-              </button>
-            )}
+    // تم إضافة حساب الارتفاع (calc) لضمان عدم التداخل مع الناف بار
+    <div className="flex bg-[#eef2f7] font-sans overflow-hidden p-0 md:p-4" 
+         style={{ height: 'calc(100vh - 85px)', marginTop: '85px' }} dir="rtl">
+      
+      {/* Sidebar */}
+      <div className={`w-full md:w-[350px] lg:w-[400px] bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl md:ml-4 flex flex-col overflow-hidden transition-all ${activeChat ? 'hidden md:flex' : 'flex'}`}>
+        <div className="p-6 bg-indigo-600 text-white flex justify-between items-center">
+          <div className="flex items-center gap-3">
+             <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-xl border border-white/30">
+               {currentUser?.displayName?.charAt(0) || 'U'}
+             </div>
+             <div>
+               <h2 className="font-black text-lg leading-tight">محادثاتي</h2>
+               <p className="text-xs text-indigo-100">{isAdmin ? 'لوحة التحكم' : 'مركز المساعدة'}</p>
+             </div>
           </div>
-          <div className="relative">
-            <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
+          {isAdmin && (
+            <button onClick={() => setShowCreateGroup(true)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10">
+              <Plus size={24} />
+            </button>
+          )}
+        </div>
+
+        <div className="p-4">
+          <div className="relative group">
+            <Search className="absolute right-3 top-3 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
             <input 
               type="text" 
-              placeholder="بحث عن اسم أو هاتف..." 
-              className="w-full bg-white/10 border-none rounded-lg py-2 pr-10 pl-4 text-white placeholder:text-white/60 focus:ring-1 focus:ring-white outline-none"
+              placeholder="بحث في الأسماء..." 
+              className="w-full bg-gray-100/50 border-none rounded-2xl py-3 pr-11 pl-4 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="flex-grow overflow-y-auto">
-          {/* المجموعات */}
+        <div className="flex-grow overflow-y-auto custom-scrollbar px-2">
           {groups.map(group => (
-            <div 
-              key={group.id} 
-              onClick={() => setActiveChat({ id: group.id, name: group.name, type: 'group' })}
-              className={`flex items-center gap-3 p-4 cursor-pointer border-b border-gray-50 transition-all ${activeChat?.id === group.id ? 'bg-primary/5 border-r-4 border-primary' : 'hover:bg-gray-50'}`}
-            >
-              <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center text-accent"><Users size={24} /></div>
-              <div>
-                <h3 className="font-bold text-gray-800">{group.name}</h3>
-                <p className="text-xs text-gray-500">{group.members.length} أعضاء</p>
+            <div key={group.id} onClick={() => setActiveChat({ id: group.id, name: group.name, type: 'group' })}
+              className={`flex items-center gap-4 p-4 mb-2 cursor-pointer rounded-2xl transition-all ${activeChat?.id === group.id ? 'bg-indigo-50 shadow-sm border border-indigo-100' : 'hover:bg-gray-50'}`}>
+              <div className="w-14 h-14 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center text-white shadow-lg"><Users size={24} /></div>
+              <div className="flex-grow overflow-hidden text-right">
+                <h3 className="font-bold text-gray-800 truncate">{group.name}</h3>
+                <p className="text-xs text-gray-500 font-medium">مجموعة عامة • {group.members.length} عضو</p>
               </div>
             </div>
           ))}
 
-          {/* المستخدمين */}
           {users.filter(u => u.name.includes(searchTerm)).map(u => (
-            <div 
-              key={u.id} 
-              onClick={() => setActiveChat({ id: u.id, name: u.name, type: 'private' })}
-              className={`flex items-center gap-3 p-4 cursor-pointer border-b border-gray-50 transition-all ${activeChat?.id === u.id ? 'bg-primary/5 border-r-4 border-primary' : 'hover:bg-gray-50'}`}
-            >
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold ${u.role === 'admin' ? 'bg-red-500' : 'bg-primary'}`}>
+            <div key={u.id} onClick={() => setActiveChat({ id: u.id, name: u.name, type: 'private' })}
+              className={`flex items-center gap-4 p-4 mb-2 cursor-pointer rounded-2xl transition-all ${activeChat?.id === u.id ? 'bg-indigo-50 shadow-sm border border-indigo-100' : 'hover:bg-gray-50'}`}>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg ${u.role === 'admin' ? 'bg-gradient-to-tr from-rose-500 to-orange-500' : 'bg-gradient-to-tr from-indigo-400 to-cyan-400'}`}>
                 {u.name.charAt(0)}
               </div>
-              <div className="flex-grow">
-                <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                    {u.name} {u.role === 'admin' && <span className="text-[8px] bg-red-100 text-red-600 px-1 rounded">ADMIN</span>}
+              <div className="flex-grow overflow-hidden text-right">
+                <h3 className="font-bold text-gray-800 flex items-center gap-2 truncate">
+                    {u.name} {u.role === 'admin' && <span className="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-lg font-black tracking-tighter">ADMIN</span>}
                 </h3>
-                <p className="text-xs text-gray-400">{u.phone}</p>
+                <p className="text-xs text-gray-400 font-medium">{u.phone || 'متصل'}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* منطقة الرسائل */}
-      <div className="flex-grow flex flex-col bg-white">
+      {/* Main Messages Area */}
+      <div className={`flex-grow flex flex-col bg-white/40 backdrop-blur-md border border-white/20 shadow-2xl rounded-3xl relative overflow-hidden transition-all ${!activeChat ? 'hidden md:flex' : 'flex'}`}>
         {activeChat ? (
           <>
-            <div className="p-4 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
-              <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold">
-                {activeChat.name.charAt(0)}
-              </div>
-              <h2 className="font-bold text-gray-800">{activeChat.name}</h2>
-            </div>
-
-            <div className="flex-grow p-4 overflow-y-auto bg-[#efe7dd] space-y-3">
-              {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.senderId === currentUser.uid ? 'justify-start' : 'justify-end'}`}>
-                  <div className={`max-w-[80%] p-3 rounded-2xl shadow-sm ${msg.senderId === currentUser.uid ? 'bg-primary text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none'}`}>
-                    {activeChat.type === 'group' && msg.senderId !== currentUser.uid && (
-                      <p className="text-[9px] font-bold mb-1 text-accent">{msg.senderName}</p>
-                    )}
-                    {msg.imageUrl && <img src={msg.imageUrl} className="rounded-lg mb-2 max-h-64 w-full object-cover" alt="chat" />}
-                    {msg.text && <p className="text-sm font-medium">{msg.text}</p>}
-                    <p className={`text-[8px] mt-1 text-left opacity-60`}>
-                      {msg.createdAt ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}
-                    </p>
+            <div className="p-4 bg-white/80 backdrop-blur-md border-b border-white/20 flex items-center justify-between z-10">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setActiveChat(null)} className="md:hidden p-2 text-gray-600 bg-gray-100 rounded-xl"><ChevronLeft size={24} /></button>
+                <div className="w-12 h-12 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-600 font-black text-xl border-2 border-white shadow-sm">
+                  {activeChat.name.charAt(0)}
+                </div>
+                <div>
+                  <h2 className="font-black text-gray-800 leading-tight">{activeChat.name}</h2>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <p className="text-xs text-gray-500 font-bold">نشط الآن</p>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="flex-grow p-4 md:p-8 overflow-y-auto space-y-6 custom-scrollbar bg-gradient-to-b from-white/20 to-transparent">
+              {messages.map((msg) => (
+                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} key={msg.id} 
+                  className={`flex ${msg.senderId === currentUser.uid ? 'justify-start' : 'justify-end'} group`}>
+                  <div className={`max-w-[85%] md:max-w-[70%] p-4 rounded-3xl shadow-xl relative border backdrop-blur-md transition-all ${
+                    msg.senderId === currentUser.uid 
+                      ? 'bg-white/90 border-white/40 rounded-tr-none text-gray-800' 
+                      : 'bg-indigo-600 border-indigo-500 rounded-tl-none text-white'
+                  }`}>
+                    
+                    {isAdmin && (
+                      <button onClick={() => handleDeleteMessage(msg.id)}
+                        className="absolute -top-3 -left-3 bg-white text-rose-500 p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-xl border border-rose-50">
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+
+                    {activeChat.type === 'group' && msg.senderId !== currentUser.uid && (
+                      <p className={`text-[11px] font-black mb-1 ${msg.senderId === currentUser.uid ? 'text-indigo-600' : 'text-indigo-100'}`}>
+                        {msg.senderName}
+                      </p>
+                    )}
+                    
+                    {msg.imageUrl && (
+                      <img src={msg.imageUrl} className="rounded-2xl mb-3 max-h-80 w-full object-cover shadow-inner" alt="attachment" />
+                    )}
+                    
+                    {msg.text && <p className="text-[15px] leading-relaxed font-medium">{msg.text}</p>}
+                    
+                    <div className={`flex items-center justify-end gap-1.5 mt-2 ${msg.senderId === currentUser.uid ? 'text-gray-400' : 'text-indigo-200'} opacity-80`}>
+                      <span className="text-[10px] font-bold">
+                        {msg.createdAt ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}
+                      </span>
+                      {msg.senderId === currentUser.uid && <CheckCheck size={16} className="text-indigo-500" />}
+                    </div>
+                  </div>
+                </motion.div>
               ))}
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-4 bg-white border-t border-gray-100">
-              {imageFile && (
-                <div className="mb-2 p-2 bg-gray-50 rounded-lg flex items-center justify-between">
-                  <span className="text-xs text-gray-500">📸 {imageFile.name}</span>
-                  <button onClick={() => setImageFile(null)} className="text-red-500"><X size={16}/></button>
-                </div>
-              )}
-              <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                <label className="p-3 text-gray-400 hover:text-primary cursor-pointer">
+            {/* Input Bar */}
+            <div className="p-4 md:p-6 bg-transparent">
+              <div className="bg-white/90 backdrop-blur-xl p-2 rounded-[2rem] shadow-2xl flex items-center gap-2 border border-white/50">
+                <label className="p-3 text-gray-500 hover:text-indigo-600 rounded-full cursor-pointer transition-all">
                   <ImageIcon size={24} />
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => setImageFile(e.target.files[0])} />
                 </label>
-                <input 
-                  type="text" 
-                  value={newMessage} 
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="اكتب رسالة..." 
-                  className="flex-grow bg-gray-100 border-none rounded-full px-6 py-3 focus:ring-2 focus:ring-primary/20 outline-none"
-                />
-                <button type="submit" disabled={loading} className="bg-primary text-white p-3 rounded-full hover:bg-gray-800 transition-all shadow-md">
-                  {loading ? <Loader className="animate-spin" size={20}/> : <Send size={20} className="rtl:rotate-180" />}
-                </button>
-              </form>
+                
+                <div className="flex-grow relative">
+                  {imageFile && (
+                    <div className="absolute bottom-full mb-4 right-0 bg-white p-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-indigo-100">
+                      <span className="text-xs font-bold text-gray-700 truncate max-w-[120px]">{imageFile.name}</span>
+                      <button onClick={() => setImageFile(null)} className="text-rose-500"><X size={16}/></button>
+                    </div>
+                  )}
+                  <form onSubmit={handleSendMessage} className="flex gap-2">
+                    <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="اكتب رسالتك هنا..." className="flex-grow bg-transparent border-none px-4 py-3 text-sm focus:ring-0 outline-none" />
+                    <button type="submit" disabled={loading || (!newMessage.trim() && !imageFile)}
+                      className="bg-indigo-600 text-white p-4 rounded-full hover:bg-indigo-700 transition-all shadow-lg disabled:opacity-50">
+                      {loading ? <Loader className="animate-spin" size={20}/> : <Send size={20} className="rtl:rotate-180" />}
+                    </button>
+                  </form>
+                </div>
+              </div>
             </div>
           </>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-gray-300">
-            <MessageCircle size={100} strokeWidth={1} />
-            <p className="text-xl font-bold">ابدأ محادثة مع العملاء أو الإدارة</p>
+          <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-6">
+            <div className="w-40 h-40 bg-gradient-to-tr from-indigo-50 to-white rounded-full flex items-center justify-center shadow-inner">
+              <MessageCircle size={100} strokeWidth={1} className="text-indigo-200" />
+            </div>
+            <div className="text-center">
+              <h2 className="text-3xl font-black text-gray-700">مرحباً بك في بيت العيلة</h2>
+              <p className="text-sm font-medium text-gray-400">اختر محادثة للبدء في التواصل</p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* مودال المجموعة */}
       <AnimatePresence>
         {showCreateGroup && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-black text-gray-900">إنشاء مجموعة</h2>
-                <button onClick={() => setShowCreateGroup(false)} className="text-gray-400 p-1"><X /></button>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-indigo-900/20 backdrop-blur-md">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-black text-gray-800">مجموعة جديدة</h2>
+                <button onClick={() => setShowCreateGroup(false)} className="bg-gray-100 p-2 rounded-xl"><X /></button>
               </div>
-              <input 
-                type="text" 
-                placeholder="اسم المجموعة" 
-                className="w-full p-4 bg-gray-50 border rounded-2xl mb-4 outline-none focus:ring-2 focus:ring-primary/20"
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
-              />
-              <div className="max-h-60 overflow-y-auto space-y-2 mb-6">
-                {users.map(u => (
-                  <div 
-                    key={u.id} 
-                    onClick={() => setSelectedUsers(prev => prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id])}
-                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer ${selectedUsers.includes(u.id) ? 'bg-primary text-white' : 'bg-gray-50'}`}
-                  >
-                    <span className="font-bold text-sm">{u.name}</span>
-                  </div>
-                ))}
+              <div className="space-y-6">
+                <input type="text" placeholder="اسم المجموعة" className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-indigo-500 transition-all font-bold"
+                  value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} />
+                <div className="max-h-60 overflow-y-auto space-y-2 custom-scrollbar">
+                    {users.map(u => (
+                        <div key={u.id} onClick={() => setSelectedUsers(prev => prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id])}
+                        className={`flex items-center gap-4 p-3 rounded-2xl cursor-pointer transition-all border-2 ${selectedUsers.includes(u.id) ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-gray-50 border-transparent'}`}>
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black ${selectedUsers.includes(u.id) ? 'bg-white/20' : 'bg-white text-indigo-600'}`}>{u.name.charAt(0)}</div>
+                          <span className="font-bold">{u.name}</span>
+                        </div>
+                    ))}
+                </div>
+                <button onClick={createGroup} disabled={loading || !newGroupName || selectedUsers.length === 0}
+                  className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-xl hover:bg-indigo-700 disabled:opacity-50">
+                  {loading ? "جاري الإنشاء..." : "إنشاء المجموعة الآن"}
+                </button>
               </div>
-              <button 
-                onClick={createGroup}
-                disabled={loading || !newGroupName || selectedUsers.length === 0}
-                className="w-full bg-primary text-white py-4 rounded-2xl font-black shadow-xl"
-              >
-                {loading ? "جاري الإنشاء..." : "إنشاء المجموعة"}
-              </button>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        input::placeholder { color: #94a3b8; font-weight: 500; }
+        /* منع أي تمرير خارجي أثناء فتح الشات */
+        .overflow-y-auto { scroll-behavior: auto !important; }
+      `}} />
     </div>
   );
 };
