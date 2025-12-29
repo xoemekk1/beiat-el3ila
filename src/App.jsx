@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Analytics } from "@vercel/analytics/react"
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { CartProvider } from './context/CartContext'; 
 import Navbar from './components/Navbar';
@@ -107,7 +108,7 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
-
+          <Analytics />
           <Footer />
           <FloatingWhatsApp />
         </div>
