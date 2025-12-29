@@ -43,14 +43,11 @@ const Login = () => {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // ✅ 1. جلب بيانات المستخدم للتحقق من الحظر والرتبة
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
         
         if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
-
-            // ⛔ التحقق من الحظر (Ban Check)
             if (userData.isBanned === true) {
                 await signOut(auth); // طرد المستخدم فوراً
                 setError("⛔ تم حظر حسابك. يرجى المحاولة لاحقاً أو التواصل مع خدمة العملاء.");
@@ -58,7 +55,6 @@ const Login = () => {
                 return; // إيقاف الدالة
             }
 
-            // ✅ التحقق من التفعيل (لو مش أدمن)
             if (userData.role !== 'admin' && !user.emailVerified) {
                 await signOut(auth);
                 setError("يرجى تفعيل حسابك أولاً. تفقد البريد الوارد أو الرسائل المزعجة (Spam).");
@@ -94,7 +90,7 @@ const Login = () => {
             phone, 
             gender, 
             role: 'customer', 
-            isBanned: false, // ✅ الحساب الجديد غير محظور افتراضياً
+            isBanned: false, 
             createdAt: new Date() 
         });
 

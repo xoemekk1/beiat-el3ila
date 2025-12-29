@@ -7,10 +7,8 @@ const Footer = () => {
     <footer className="bg-[#111] text-white pt-16 pb-8 border-t-4 border-[#D4AF37]" dir="rtl">
       <div className="container mx-auto px-6">
         
-        {/* Top Section: Logo & Description (Full Width on Mobile, Side by Side on Desktop) */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 mb-12 text-right">
           
-          {/* 1. Brand Info */}
           <div className="lg:col-span-1">
             <Link to="/" className="text-2xl font-black tracking-tight flex items-center gap-2 mb-6 group w-fit">
               <ShoppingBag className="text-[#D4AF37] group-hover:rotate-12 transition-transform" size={32} />
@@ -22,7 +20,6 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* 2. Quick Links */}
           <div>
             <h3 className="text-lg font-bold mb-6 text-[#D4AF37] relative inline-block">
               روابط سريعة
@@ -36,7 +33,6 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* 3. Customer Service */}
           <div>
             <h3 className="text-lg font-bold mb-6 text-[#D4AF37] relative inline-block">
               خدمة العملاء
@@ -50,7 +46,6 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* 4. Contact & Social */}
           <div>
             <h3 className="text-lg font-bold mb-6 text-[#D4AF37] relative inline-block">
               تواصل معنا
@@ -81,13 +76,10 @@ const Footer = () => {
 
         </div>
 
-        {/* Bottom Bar */}
         <div className="border-t border-gray-800 pt-8 mt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-gray-500 text-sm font-medium">
           <p>© {new Date().getFullYear()} بيت العيلة - جميع الحقوق محفوظة.</p>
           <div className="flex gap-6">
-             {/* Payment Icons (Optional Placeholder) */}
              <div className="flex gap-2 opacity-50 grayscale hover:grayscale-0 transition-all">
-                 {/* You can add payment icons here later */}
              </div>
           </div>
         </div>

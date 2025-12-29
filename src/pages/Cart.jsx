@@ -44,7 +44,6 @@ const Cart = () => {
                 key={item.cartId} 
                 className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex gap-4 md:gap-6 items-center"
               >
-                {/* ✅ صورة المنتج المعدلة (Full Cover) */}
                 <Link to={`/product/${item.id}`} className="shrink-0 w-24 h-24 md:w-32 md:h-32 bg-gray-50 rounded-xl overflow-hidden border border-gray-100 hover:opacity-90 transition-opacity">
                   <img 
                     src={item.image} 
@@ -55,7 +54,6 @@ const Cart = () => {
 
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-2">
-                    {/* اسم المنتج (قابل للضغط) */}
                     <div>
                         <div className="text-xs text-gray-400 mb-1">{item.category}</div>
                         <Link to={`/product/${item.id}`} className="font-bold text-gray-900 text-lg hover:text-primary transition-colors line-clamp-1">
@@ -85,7 +83,6 @@ const Cart = () => {
             ))}
           </div>
 
-          {/* ملخص الطلب */}
           <div className="lg:col-span-1">
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm sticky top-28">
               <h3 className="text-xl font-bold text-gray-900 mb-6">ملخص الطلب</h3>

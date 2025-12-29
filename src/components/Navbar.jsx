@@ -63,14 +63,12 @@ const Navbar = () => {
       navigate('/');
   };
 
-  // ✅ 1. تقليل الحشو الرأسي (py) جداً للحفاظ على الشريط رفيعاً
   const navbarClasses = `fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
     isScrolled 
-      ? 'bg-white/95 backdrop-blur-md shadow-sm py-2' // رفيع جداً عند السكرول
-      : 'bg-white/60 backdrop-blur-sm py-3' // رفيع في العادي
+      ? 'bg-white/95 backdrop-blur-md shadow-sm py-2' 
+      : 'bg-white/60 backdrop-blur-sm py-3' 
   }`;
 
-  // ✅ 2. تكبير الخط (text-lg) وتقليل الحشو الداخلي للرابط
   const linkClasses = (path) => `text-base md:text-lg font-bold uppercase tracking-wider transition-colors relative group py-1 leading-none ${
     location.pathname === path ? 'text-[#D4AF37]' : 'text-gray-900 hover:text-[#D4AF37]'
   }`;
@@ -86,23 +84,20 @@ const Navbar = () => {
     <nav className={navbarClasses} dir="rtl">
       <div className="container mx-auto px-4 md:px-8 flex justify-between items-center relative">
         
-        {/* 1. اللوجو - خط كبير جداً لكن بدون مسافات رأسية */}
         <Link to="/" className="text-2xl md:text-4xl font-black tracking-tight flex items-center gap-1 group z-50 leading-none">
           <ShoppingBag className="text-[#D4AF37] group-hover:rotate-12 transition-transform" size={32} />
           <span className="text-gray-900">بيت</span>
           <span className="text-[#D4AF37]">العيلة</span>
         </Link>
 
-        {/* 2. روابط الديسك توب */}
         <div className="hidden md:flex items-center gap-8">
           <NavLink to="/">الرئيسية</NavLink>
           
           <div 
-            className="relative py-2" // تقليل منطقة الهوفر
+            className="relative py-2" 
             onMouseEnter={() => setIsShopHovered(true)}
             onMouseLeave={() => setIsShopHovered(false)}
           >
-            {/* تكبير خط المتجر */}
             <Link to="/shop" className={`flex items-center gap-1 text-base md:text-lg font-bold uppercase tracking-wider leading-none transition-colors ${location.pathname === '/shop' ? 'text-[#D4AF37]' : 'text-gray-900 hover:text-[#D4AF37]'}`}>
                 المتجر <ChevronDown size={18} className={`transition-transform duration-300 ${isShopHovered ? 'rotate-180' : ''}`}/>
             </Link>
@@ -145,7 +140,6 @@ const Navbar = () => {
           <NavLink to="/contact">اتصل بنا</NavLink>
         </div>
 
-        {/* 3. أيقونات الإجراءات - تكبير الأيقونات مع تقليل الهوامش */}
         <div className="flex items-center gap-2 md:gap-4 z-50">
           <Link to="/search" className="p-1 text-gray-900 hover:text-[#D4AF37] transition-colors hidden md:block">
             <Search size={26} />
@@ -191,7 +185,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* 4. قائمة الموبايل - خطوط ضخمة */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div 

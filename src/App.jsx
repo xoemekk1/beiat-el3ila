@@ -1,15 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-
-// Context
-import { CartProvider } from './context/CartContext'; // ضروري جداً لعمل السلة
-
-// Layout Components
+import { CartProvider } from './context/CartContext'; 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
-import Wishlist from './pages/Wishlist'; // ✅ ضيف ده
-// Pages
+import Wishlist from './pages/Wishlist';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
@@ -24,13 +19,10 @@ import Contact from './pages/Contact';
 import Policy from './pages/Policy';
 import Terms from './pages/Terms';
 import NotFound from './pages/NotFound';
-
-// Firebase & Auth
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
-// --- مكون الحماية الصارم (Admin Only) ---
 import FacebookPixel from './utils/FacebookPixel';
 
 const AdminRoute = ({ children }) => {
@@ -43,13 +35,12 @@ const AdminRoute = ({ children }) => {
       if (currentUser) {
         setUser(currentUser);
         try {
-          // جلب بيانات المستخدم من Firestore للتحقق من دوره
           const userDoc = await getDoc(doc(db, "users", currentUser.uid));
           
           if (userDoc.exists() && userDoc.data().role === 'admin') {
-            setIsAdmin(true); // هذا المستخدم أدمن
+            setIsAdmin(true); 
           } else {
-            setIsAdmin(false); // هذا المستخدم عميل عادي
+            setIsAdmin(false); 
           }
         } catch (error) {
           console.error("Error verifying admin role:", error);
@@ -71,24 +62,18 @@ const AdminRoute = ({ children }) => {
     </div>
   );
   
-  // 1. إذا لم يكن مسجل دخول -> اذهب لصفحة الدخول
   if (!user) return <Navigate to="/login" state={{ from: { pathname: '/admin' } }} />;
-
-  // 2. إذا كان مسجل دخول ولكنه ليس أدمن -> اذهب للصفحة الرئيسية
   if (!isAdmin) return <Navigate to="/" />;
-
-  // 3. إذا كان أدمن -> اسمح بالدخول
   return children;
 };
 
-// --- التطبيق الرئيسي ---
+
 function App() {
   return (
-    <CartProvider> {/* تغليف التطبيق بـ CartProvider ضروري جداً */}
+    <CartProvider> 
       <Router>
-        <ScrollToTop /> {/* تشغيل السكرول للأعلى عند تغيير الصفحة */}
+        <ScrollToTop /> 
         
-        {/* ✅ تشغيل فيسبوك بيكسل هنا */}
         <FacebookPixel /> 
 
         <div dir="rtl" className="font-sans text-gray-800 bg-[#f9fafb] min-h-screen flex flex-col">
@@ -96,7 +81,7 @@ function App() {
           
           <main className="flex-grow">
             <Routes>
-              {/* الصفحات العامة */}
+           
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/product/:id" element={<ProductDetails />} />
@@ -105,13 +90,11 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/wishlist" element={<Wishlist />} />
-              {/* صفحات المعلومات */}
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/policy" element={<Policy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/signup" element={<Signup />} />
-              {/* لوحة التحكم (محمية) */}
               <Route 
                 path="/admin" 
                 element={
@@ -121,7 +104,6 @@ function App() {
                 } 
               />
 
-              {/* صفحة الخطأ 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

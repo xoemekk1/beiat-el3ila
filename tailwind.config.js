@@ -6,18 +6,16 @@ export default {
   ],
   theme: {
     extend: {
-      // ✅ تعريف الألوان الرسمية للموقع (عشان نستخدمها بأسماء ثابتة)
       colors: {
-        primary: '#1a1a1a',   // الأسود الأساسي (للنصوص والعناوين)
-        secondary: '#4b5563', // الرمادي (للنصوص الفرعية)
-        accent: '#D4AF37',    // الذهبي (للأزرار واللمسات الجمالية)
-        'accent-dark': '#b5952f', // ذهبي غامق (للـ Hover)
-        'light-bg': '#FDFDFD', // خلفية فاتحة جداً
+        primary: '#1a1a1a',  
+        secondary: '#4b5563', 
+        accent: '#D4AF37',   
+        'accent-dark': '#b5952f', 
+        'light-bg': '#FDFDFD', 
       },
       fontFamily: {
-        sans: ['Almarai', 'sans-serif'], // تعيين خط المراعي كخط افتراضي
+        sans: ['Almarai', 'sans-serif'],
       },
-      // ❌ تم حذف قسم fontSize المخصص لكي نعود للمقاسات القياسية المتناسقة
     },
   },
   plugins: [],

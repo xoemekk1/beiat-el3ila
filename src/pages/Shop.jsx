@@ -3,8 +3,7 @@ import { db } from '../firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import ProductCard from '../components/ProductCard';
 import { Filter, X, Search, ChevronDown } from 'lucide-react';
-import { useLocation } from 'react-router-dom'; // ✅ مهم عشان نقرأ الرابط
-
+import { useLocation } from 'react-router-dom'; 
 const Shop = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -17,23 +16,19 @@ const Shop = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // ✅ استخدام useLocation لقراءة الرابط
   const location = useLocation();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. جلب المنتجات
         const productsSnap = await getDocs(query(collection(db, "products"), orderBy("createdAt", "desc")));
         const productsData = productsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setProducts(productsData);
         setFilteredProducts(productsData);
 
-        // 2. جلب التصنيفات
         const catsSnap = await getDocs(collection(db, "categories"));
         setCategories(catsSnap.docs.map(doc => doc.data().name));
 
-        // 3. ✅ قراءة الفلتر من الرابط (لو جاي من الهوم بيدج)
         const params = new URLSearchParams(location.search);
         const categoryFromUrl = params.get('category');
         
@@ -48,9 +43,7 @@ const Shop = () => {
       }
     };
     fetchData();
-  }, [location.search]); // ✅ بنعيد التشغيل لو الرابط اتغير
-
-  // منطق الفلترة (بيشتغل لما نغير أي فلتر)
+  }, [location.search]);
   useEffect(() => {
     let result = products;
 

@@ -11,7 +11,6 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 🧠 قوائم الأسماء لتحديد النوع تلقائياً
   const maleNames = ["محمد", "أحمد", "محمود", "علي", "عمر", "حسن", "حسين", "خالد", "يوسف", "ابراهيم", "عبدالله", "عبدالرحمن", "مصطفى", "كريم", "طارق", "زياد", "عمرو", "هشام", "وائل", "ياسر", "سامح", "شريف", "ماجد", "رامي", "تامر", "ايهاب", "وليد", "سيد", "اسلام", "mohamed", "ahmed", "mahmoud", "ali", "omar", "hassan", "khaled", "youssef", "ibrahim", "mostafa", "kareem", "tarek", "ziad", "amr", "hisham", "wael", "yasser", "sherif", "maged", "ramy", "tamer", "walid", "sayed", "islam"];
   const femaleNames = ["فاطمة", "مريم", "اية", "اسراء", "سارة", "هاجر", "نور", "سلمى", "منى", "نادية", "هبة", "رنا", "مي", "نهى", "دينا", "ياسمين", "فريدة", "جنى", "ملك", "حبيبة", "منة", "امل", "اميرة", "ندى", "رضوى", "شيماء", "علياء", "سلوى", "هدى", "fatma", "maryam", "aya", "esraa", "sara", "hagar", "nour", "salma", "mona", "nadia", "heba", "rana", "mai", "noha", "dina", "yasmin", "farida", "jana", "malak", "habiba", "menna", "amal", "amira", "nada", "radwa", "shaimaa"];
 
@@ -26,7 +25,6 @@ const Signup = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // ✅ تحكم خاص برقم الهاتف (أرقام فقط - حد أقصى 11)
     if (name === 'phone') {
         const numericValue = value.replace(/\D/g, ''); // مسح أي حروف
         if (numericValue.length <= 11) {
@@ -40,8 +38,6 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    // ✅ التحقق من صحة رقم الهاتف (لازم يبدأ بـ 01 ويكون 11 رقم)
     if (!formData.phone.startsWith("01") || formData.phone.length !== 11) {
         setError("رقم الهاتف يجب أن يكون 11 رقماً ويبدأ بـ 01");
         return;

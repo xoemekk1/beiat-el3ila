@@ -7,7 +7,7 @@ const ScrollToTop = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    ReactPixel.pageView(); // تتبع التنقل بين الصفحات
+    ReactPixel.pageView(); 
   }, [pathname]);
 
   return null;

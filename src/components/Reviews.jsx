@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase';
 import { collection, addDoc, query, where, orderBy, doc, serverTimestamp, getDoc, onSnapshot, getDocs } from 'firebase/firestore';
-import { Star, Send, Lock, MessageSquare, AlertCircle, CheckCircle, Camera, X, Image as ImageIcon } from 'lucide-react'; // ✅ إضافة أيقونات جديدة
+import { Star, Send, Lock, MessageSquare, AlertCircle, CheckCircle, Camera, X, Image as ImageIcon } from 'lucide-react'; 
 import { onAuthStateChanged } from 'firebase/auth';
 import { Link } from 'react-router-dom';
 
@@ -12,16 +12,12 @@ const Reviews = ({ productId }) => {
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
-
-  // ✅ 1. حالات الصورة الجديدة
   const [reviewImage, setReviewImage] = useState(null); // ملف الصورة
   const [imagePreview, setImagePreview] = useState(''); // رابط المعاينة
 
-  // إعدادات Cloudinary (نفس المستخدمة في الأدمن)
   const CLOUD_NAME = "dahzcrxj9"; 
   const UPLOAD_PRESET = "cmgojjrr";
 
-  // حالات التحقق
   const [canReview, setCanReview] = useState(false);
   const [reviewMessage, setReviewMessage] = useState('جاري التحقق...');
 
@@ -78,7 +74,6 @@ const Reviews = ({ productId }) => {
     } catch (error) { console.error(error); setReviewMessage('حدث خطأ أثناء التحقق.'); }
   };
 
-  // ✅ 2. دالة رفع الصورة
   const uploadImage = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -88,7 +83,6 @@ const Reviews = ({ productId }) => {
     return data.secure_url;
   };
 
-  // ✅ 3. معالجة اختيار الصورة
   const handleImageChange = (e) => {
     if (e.target.files[0]) {
       setReviewImage(e.target.files[0]);
@@ -102,7 +96,6 @@ const Reviews = ({ productId }) => {
     setLoading(true);
 
     try {
-      // ✅ 4. رفع الصورة إذا وجدت
       let finalImageUrl = "";
       if (reviewImage) {
         finalImageUrl = await uploadImage(reviewImage);
@@ -115,14 +108,14 @@ const Reviews = ({ productId }) => {
         userEmail: user.email,
         rating: Number(rating),
         comment,
-        image: finalImageUrl, // ✅ حفظ رابط الصورة
+        image: finalImageUrl, 
         status: "pending", 
         createdAt: serverTimestamp()
       });
 
       setComment('');
       setRating(0);
-      setReviewImage(null); // تصفير الصورة
+      setReviewImage(null); 
       setImagePreview('');
       setCanReview(false);
       setReviewMessage('شكراً لتقييمك! سيظهر التقييم بعد مراجعة الإدارة.');
@@ -164,9 +157,7 @@ const Reviews = ({ productId }) => {
             
             <div className="relative">
               <textarea className="w-full p-4 pl-12 border border-gray-200 rounded-xl focus:border-primary outline-none min-h-[100px]" placeholder="اكتب رأيك في المنتج هنا..." value={comment} onChange={(e) => setComment(e.target.value)} required />
-              
-              {/* ✅ 5. أزرار التحكم (إرسال + رفع صورة) */}
-              <div className="absolute bottom-4 left-4 flex gap-2">
+                            <div className="absolute bottom-4 left-4 flex gap-2">
                  <input type="file" id="review-img-upload" accept="image/*" className="hidden" onChange={handleImageChange} />
                  <label htmlFor="review-img-upload" className="bg-gray-100 text-gray-600 p-2 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer" title="أضف صورة">
                     <Camera size={18} />
@@ -177,7 +168,6 @@ const Reviews = ({ productId }) => {
               </div>
             </div>
 
-            {/* ✅ 6. معاينة الصورة */}
             {imagePreview && (
                 <div className="mt-3 relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200 group">
                     <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
@@ -218,7 +208,6 @@ const Reviews = ({ productId }) => {
               </div>
               <p className="text-gray-600 text-sm leading-relaxed pr-4">{rev.comment}</p>
               
-              {/* ✅ 7. عرض صورة الريفيو */}
               {rev.image && (
                   <div className="mt-3 mr-4 w-32 h-32 rounded-xl overflow-hidden border border-gray-100 cursor-pointer" onClick={() => window.open(rev.image, '_blank')}>
                       <img src={rev.image} alt="User Review" className="w-full h-full object-cover hover:scale-105 transition-transform" />

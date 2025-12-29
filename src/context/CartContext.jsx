@@ -16,7 +16,6 @@ export const CartProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // ✅ نظام الإشعارات الداخلي
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   useEffect(() => { localStorage.setItem('cart', JSON.stringify(cartItems)); }, [cartItems]);
@@ -26,39 +25,27 @@ export const CartProvider = ({ children }) => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ ...toast, show: false }), 3000);
   };
-
-  // --- دالة الإضافة (المنطق الجديد) ---
   const addToCart = (product, quantity = 1, color = null, size = null) => {
     const qtyToAdd = parseInt(quantity, 10);
     const productStock = parseInt(product.stock, 10);
     const productMaxLimit = parseInt(product.maxLimit, 10) || 10;
-
-    // حساب الكمية الحالية في السلة لنفس المنتج
     const currentQtyInCart = cartItems
       .filter(item => item.id === product.id)
       .reduce((sum, item) => sum + parseInt(item.quantity, 10), 0);
 
     const futureTotal = currentQtyInCart + qtyToAdd;
-
-    // 1. هل نفذت الكمية؟
     if (productStock <= 0) {
       showToast("عذراً، هذا المنتج غير متوفر حالياً (نفذت الكمية)", "error");
       return;
     }
-
-    // 2. هل تجاوز الحد الأقصى؟ (رسالة بدون تفاصيل المخزون)
     if (futureTotal > productMaxLimit) {
       showToast(`عذراً، الحد الأقصى المسموح بطلبه هو ${productMaxLimit} قطع فقط.`, "error");
       return;
     }
-
-    // 3. هل الكمية المطلوبة موجودة؟ (رسالة غامضة بدون رقم المخزون)
     if (futureTotal > productStock) {
       showToast("عذراً، الكمية المطلوبة غير متوفرة حالياً في المخزون.", "error");
       return;
     }
-
-    // 4. الإضافة للسلة
     setCartItems(prev => {
       const existingItemIndex = prev.findIndex(item => item.id === product.id && item.selectedColor === color && item.selectedSize === size);
       
@@ -84,8 +71,6 @@ export const CartProvider = ({ children }) => {
         const newQty = currentQty + amount;
         const stock = parseInt(item.stock, 10);
         const maxLimit = parseInt(item.maxLimit, 10) || 10;
-        
-        // حساب إجمالي هذا المنتج في السلة
         const otherVariantsQty = prev
             .filter(p => p.id === item.id && p.cartId !== cartId)
             .reduce((sum, p) => sum + parseInt(p.quantity, 10), 0);

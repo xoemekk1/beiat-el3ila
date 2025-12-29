@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { db, auth } from '../firebase';
-import { collection, addDoc, query, where, getDocs, doc, updateDoc, increment, arrayUnion } from 'firebase/firestore'; // ✅ تمت إضافة updateDoc, increment, arrayUnion
+import { collection, addDoc, query, where, getDocs, doc, updateDoc, increment, arrayUnion } from 'firebase/firestore'; 
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, MapPin, Phone, User, Truck, Mail, ShoppingBag, ShieldCheck, Loader, TicketPercent, Wallet, Banknote, Upload, Image as ImageIcon, DollarSign, Gift, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,7 +17,6 @@ const Checkout = () => {
   const [shippingCost, setShippingCost] = useState(0);
   const [currentUserId, setCurrentUserId] = useState(null);
   
-  // ✅ ستيت العناوين المحفوظة
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState('new'); // 'new' or addressID
 
@@ -36,7 +35,7 @@ const Checkout = () => {
   const [promoCode, setPromoCode] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
   const [appliedPromo, setAppliedPromo] = useState(null); // اسم الكوبون للعرض
-  const [appliedPromoId, setAppliedPromoId] = useState(null); // ✅ ID الكوبون للتحديث
+  const [appliedPromoId, setAppliedPromoId] = useState(null); 
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
   const [verifyingPromo, setVerifyingPromo] = useState(false);
@@ -58,7 +57,6 @@ const Checkout = () => {
             setCurrentUserId(user.uid);
             setFormData(prev => ({ ...prev, email: user.email }));
 
-            // ✅ جلب العناوين المحفوظة عند الدخول
             try {
                 const q = collection(db, "users", user.uid, "addresses");
                 const snapshot = await getDocs(q);
@@ -79,7 +77,6 @@ const Checkout = () => {
     }
   };
 
-  // ✅ دالة اختيار عنوان محفوظ
   const handleAddressSelect = (addrId) => {
       setSelectedAddressId(addrId);
       if (addrId === 'new') {
@@ -105,7 +102,6 @@ const Checkout = () => {
   
   const handleImageChange = (e) => { if (e.target.files[0]) { setReceiptImage(e.target.files[0]); setReceiptPreview(URL.createObjectURL(e.target.files[0])); } };
 
-  // ✅ دالة تطبيق الكوبون المحدثة (للتحقق من الوقت والعدد)
   const handleApplyPromo = async () => {
     if (!promoCode) return;
     setVerifyingPromo(true);
@@ -156,7 +152,7 @@ const Checkout = () => {
 
         setDiscountAmount(discount);
         setAppliedPromo(promoData.code);
-        setAppliedPromoId(promoDocId); // ✅ حفظنا ال ID عشان نستخدمه وقت الطلب
+        setAppliedPromoId(promoDocId); 
         setPromoSuccess(`تم تطبيق خصم ${discount} ج.م`);
 
     } catch (err) {
@@ -175,7 +171,6 @@ const Checkout = () => {
     e.preventDefault();
     if (cartItems.length === 0) return;
 
-    // ✅ التحقق من الرقم لو اختار عنوان جديد أو عدل عليه
     const phoneRegex = /^01[0-9]{9}$/;
     if (!phoneRegex.test(formData.phone)) {
         alert("خطأ: رقم الهاتف يجب أن يكون 11 رقماً ويبدأ بـ 01");
@@ -193,8 +188,6 @@ const Checkout = () => {
     try {
       let receiptUrl = null;
       if (paymentMethod === 'vodafone' && receiptImage) receiptUrl = await uploadReceiptImage(receiptImage);
-
-      // ✅ (اختياري) حفظ العنوان الجديد لو اختار 'new'
       if (selectedAddressId === 'new' && currentUserId) {
           const saveChoice = window.confirm("هل تريد حفظ هذا العنوان لاستخدامه مستقبلاً؟");
           if (saveChoice) {
@@ -204,7 +197,6 @@ const Checkout = () => {
           }
       }
 
-      // 1️⃣ إنشاء الطلب
       const newOrderRef = await addDoc(collection(db, "orders"), {
         userId: currentUserId,
         customer: formData,
@@ -225,7 +217,6 @@ const Checkout = () => {
         createdAt: new Date()
       });
 
-      // 2️⃣ ✅ تحديث استخدام الكوبون (إذا تم استخدام كوبون)
       if (appliedPromoId) {
         try {
             const promoRef = doc(db, "promo_codes", appliedPromoId);
@@ -246,7 +237,6 @@ const Checkout = () => {
         }
       }
 
-      // ✅ 3️⃣ فيسبوك بيكسل: تسجيل حدث الشراء (Purchase)
       ReactPixel.track('Purchase', {
         value: fullOrderTotal, // القيمة الإجمالية للطلب
         currency: 'EGP',
@@ -255,8 +245,6 @@ const Checkout = () => {
         num_items: cartItems.length, // عدد المنتجات
         order_id: newOrderRef.id // معرف الطلب (لعدم التكرار)
       });
-
-      // ... (Notifications & Pixel) ...
       setSuccess(true);
       clearCart();
       setTimeout(() => navigate('/profile'), 3000);
@@ -285,9 +273,7 @@ const Checkout = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           
           <div className="lg:col-span-2">
-            
-            {/* ✅ قسم اختيار العنوان المحفوظ */}
-            {savedAddresses.length > 0 && (
+                        {savedAddresses.length > 0 && (
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><MapPin size={20} className="text-primary"/> اختر عنوان التوصيل</h3>
                     <div className="grid md:grid-cols-2 gap-3">
@@ -317,9 +303,7 @@ const Checkout = () => {
 
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 mb-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-100 pb-4">بيانات التوصيل</h3>
-                
-                {/* ✅ الفورم ده هيتملي أوتوماتيك لو اختار عنوان محفوظ */}
-                <form id="checkout-form" onSubmit={handleSubmit} className="space-y-5">
+                                <form id="checkout-form" onSubmit={handleSubmit} className="space-y-5">
                     <div className="grid md:grid-cols-2 gap-5">
                         <div>
                             <label className="block text-gray-700 font-bold mb-2 text-sm">الاسم بالكامل</label>

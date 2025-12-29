@@ -1,26 +1,24 @@
-/* استيراد خط Almarai من Google Fonts (الأنسب والأفخم للعناوين) */
 @import url('https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ✅ 1. إعدادات الصفحة الأساسية */
 html {
-  font-size: 16px; /* الحجم القياسي لضمان عمل Tailwind بشكل صحيح */
+  font-size: 16px; 
   scroll-behavior: smooth;
 }
 
 body {
-  font-family: 'Almarai', sans-serif; /* توحيد الخط في الموقع كله */
-  background-color: #f9fafb; /* لون خلفية عام (رمادي فاتح جداً) مريح للعين */
-  color: #1f2937; /* لون النص الأساسي (رمادي غامق وليس أسود قاتم) */
+  font-family: 'Almarai', sans-serif;
+  background-color: #f9fafb; 
+  color: #1f2937;
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
   overflow-x: hidden;
 }
 
-/* ✅ 2. تحسين شكل التمرير (Scrollbar) ليتماشى مع الهوية */
+
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -30,17 +28,14 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D4AF37; /* اللون الذهبي المعتمد */
+  background: #D4AF37; 
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #b5952f; /* درجة أغمق قليلاً عند التمرير */
+  background: #b5952f;
 }
 
-/* ✅ 3. طبقة المكونات (اختياري) */
-/* نلغي التلوين الإجباري هنا لكي لا نفسد أزرار Tailwind */
-/* نكتفي بتحديد الخط فقط للعناصر التفاعلية */
 @layer base {
   button, input, select, textarea {
     font-family: 'Almarai', sans-serif;

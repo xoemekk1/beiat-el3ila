@@ -8,7 +8,7 @@ import {
   ShoppingBag, Plus, X, Users, Phone, MapPin, Calendar, Clock, 
   List, Truck, Search, MessageSquare, Bell, DollarSign, Loader, LayoutTemplate, Image as ImageIcon, Palette, Ruler,
   TicketPercent, Star, Check, EyeOff, Monitor, Wallet, Banknote, ExternalLink, Save, ArrowLeft, ArrowRight, Mail, User, Ban, Unlock, Pencil,
-  History, CalendarClock, TrendingUp, ChevronLeft, ChevronRight // ✅ Added Icons for image sorting
+  History, CalendarClock, TrendingUp, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -17,8 +17,6 @@ const Admin = () => {
   const fileInputRef = useRef(null);
   const heroImageInputRef = useRef(null);
   const categoryImageInputRef = useRef(null);
-
-  // States
   const [activeTab, setActiveTab] = useState('dashboard');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -30,52 +28,31 @@ const Admin = () => {
   const [promoCodes, setPromoCodes] = useState([]);
   const [allReviews, setAllReviews] = useState([]);
   const [siteReviews, setSiteReviews] = useState([]);
-
-  // Shipping Modal State
   const [showShippingModal, setShowShippingModal] = useState(false);
   const [shippingData, setShippingData] = useState({ orderId: null, status: '', courier: 'bosta', trackingNumber: '' });
-
-  // User Edit Modal States
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState({ id: '', name: '', email: '', phone: '', isBanned: false });
-
-  // Promo History Modal State
   const [showPromoHistoryModal, setShowPromoHistoryModal] = useState(false);
   const [selectedPromo, setSelectedPromo] = useState(null);
-
-  // Review Form State
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5, image: null, imageUrl: '' });
   const [reviewLoading, setReviewLoading] = useState(false);
-
-  // Hero Settings
   const [heroSettings, setHeroSettings] = useState({ title1: '', title2: '', description: '', image: null, imageUrl: '', imageFit: 'cover' });
-    
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
-    
   const [editMode, setEditMode] = useState(false);
   const [currentId, setCurrentId] = useState(null);
-
-  // Product State ✅ (Updated with costPrice)
   const [product, setProduct] = useState({ 
     name: '', price: '', oldPrice: '', costPrice: '', category: '', description: '', 
     images: [], imageUrls: [], colors: '', sizes: '', discountEnd: '',
     stock: '', 
     maxLimit: 10 
   });
-
-  // Category State
   const [categoryForm, setCategoryForm] = useState({ name: '', image: null, imageUrl: '' });
   const [editingCategory, setEditingCategory] = useState(null);
-
-  // Updated Promo State
   const [newPromo, setNewPromo] = useState({ code: '', type: 'percent', value: '', expiryDate: '', usageLimit: '' });
-
   const CLOUD_NAME = "dahzcrxj9"; 
   const UPLOAD_PRESET = "cmgojjrr";
-
-  // Data Fetching
   useEffect(() => {
     const unsubProducts = onSnapshot(collection(db, "products"), (snap) => setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubOrders = onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -160,13 +137,11 @@ const Admin = () => {
 
   }, [users, orders]);
 
-  // ✅ 1. Calculate Total Revenue
   const totalSales = orders.reduce((sum, order) => { 
       const isCancelled = ['cancelled', 'returned', 'returning'].includes(order.status); 
       return isCancelled ? sum : sum + (Number(order.total) || 0); 
   }, 0);
 
-  // ✅ 2. Calculate Total Profit
   const totalProfit = orders.reduce((sum, order) => {
       const isCancelled = ['cancelled', 'returned', 'returning'].includes(order.status);
       if (isCancelled) return sum;
@@ -281,7 +256,6 @@ const Admin = () => {
 
   const handleImagesChange = (e) => { if (e.target.files) setProduct({ ...product, images: Array.from(e.target.files) }); };
 
-  // ✅ New Functions for Image Reordering (Feature 1)
   const moveImageLeft = (index) => {
     if (index === 0) return;
     const newUrls = [...product.imageUrls];
@@ -296,7 +270,6 @@ const Admin = () => {
     setProduct({ ...product, imageUrls: newUrls });
   };
     
-  // ✅ Updated Product Submit Handler (Includes costPrice)
   const handleProductSubmit = async (e) => {
     e.preventDefault(); setLoading(true); setError(''); setSuccess('');
     try {
@@ -318,7 +291,7 @@ const Admin = () => {
         name: product.name, 
         price: Number(product.price), 
         oldPrice: Number(product.oldPrice) || 0,
-        costPrice: Number(product.costPrice) || 0, // ✅ Saving cost price
+        costPrice: Number(product.costPrice) || 0, 
         category: product.category, 
         description: product.description, 
         image: finalImageUrls[0], // First image is main
@@ -341,7 +314,6 @@ const Admin = () => {
     } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
 
-  // ✅ Updated Edit Click Handler (Includes costPrice)
   const handleEditClick = (item) => {
     setEditMode(true); setCurrentId(item.id);
     let formattedDate = '';
@@ -358,7 +330,7 @@ const Admin = () => {
         discountEnd: formattedDate,
         stock: item.stock !== undefined ? item.stock : '', 
         maxLimit: item.maxLimit !== undefined ? item.maxLimit : 10,
-        costPrice: item.costPrice || '' // ✅ Loading cost price
+        costPrice: item.costPrice || ''
     });
     setActiveTab('products'); window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -551,7 +523,6 @@ const Admin = () => {
             </div>
         )}
 
-        {/* ✅ Promo History Modal */}
         {showPromoHistoryModal && selectedPromo && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                 <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
@@ -595,24 +566,11 @@ const Admin = () => {
             </div>
         )}
 
-        {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
-                <div className="lg:col-span-1 bg-[#1a1a1a] text-white rounded-3xl p-5 overflow-y-auto max-h-[85vh] custom-scrollbar shadow-2xl">
-                    <div className="flex items-center gap-2 mb-6 border-b border-gray-700 pb-4"><Bell className="text-accent" /> <h2 className="text-xl font-bold">التنبيهات</h2></div>
-                    <div className="space-y-4">
-                        {notifications.length === 0 ? <p className="text-gray-500 text-center text-sm">لا توجد تنبيهات جديدة</p> : notifications.map(notif => (
-                            <div key={notif.id} className="flex gap-3 items-start p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border-r-4 border-accent">
-                                <div className="mt-1">{notif.icon === 'shopping-bag' ? <ShoppingBag size={18} className="text-green-400"/> : <Users size={18} className="text-blue-400"/>}</div>
-                                <div><p className="text-sm font-bold text-gray-200">{notif.message}</p><p className="text-xs text-gray-500 mt-1">{formatDate(notif.time).split(' ')[1]} {formatDate(notif.time).split(' ')[2]}</p></div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
                 <div className="lg:col-span-3 space-y-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"><div className="flex justify-between items-center mb-2"><span className="text-gray-500 font-bold">المبيعات</span><DollarSign className="text-green-600 bg-green-50 p-1 rounded-lg" size={28}/></div><p className="text-2xl font-extrabold text-primary">{totalSales.toLocaleString()} <span className="text-xs text-gray-400">ج.م</span></p></div>
-                        {/* ✅ Profit Card */}
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"><div className="flex justify-between items-center mb-2"><span className="text-gray-500 font-bold">صافي الربح</span><TrendingUp className="text-green-600 bg-green-50 p-1 rounded-lg" size={28}/></div><p className="text-2xl font-extrabold text-primary">{totalProfit.toLocaleString()} <span className="text-xs text-gray-400">ج.م</span></p></div>
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"><div className="flex justify-between items-center mb-2"><span className="text-gray-500 font-bold">المنتجات</span><Package className="text-purple-600 bg-purple-50 p-1 rounded-lg" size={28}/></div><p className="text-2xl font-extrabold text-primary">{products.length}</p></div>
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"><div className="flex justify-between items-center mb-2"><span className="text-gray-500 font-bold">العملاء</span><Users className="text-orange-600 bg-orange-50 p-1 rounded-lg" size={28}/></div><p className="text-2xl font-extrabold text-primary">{customersList.length}</p></div>
@@ -821,7 +779,6 @@ const Admin = () => {
           </div>
         )}
 
-        {/* ✅ Products Tab (Updated with Cost Price & Image Reordering & Full/Zoom Images) */}
         {activeTab === 'products' && (
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
@@ -833,7 +790,6 @@ const Admin = () => {
                         <input type="text" required className="w-full p-3 border-2 border-gray-100 rounded-xl outline-none focus:border-accent font-bold" value={product.name} onChange={e => setProduct({...product, name: e.target.value})} placeholder="اسم المنتج" />
                         <div className="grid grid-cols-2 gap-3">
                             <input type="number" required className="w-full p-3 border-2 border-gray-100 rounded-xl outline-none focus:border-accent" value={product.price} onChange={e => setProduct({...product, price: e.target.value})} placeholder="سعر البيع" />
-                            {/* ✅ Added Cost Price Input */}
                             <input type="number" className="w-full p-3 border-2 border-red-100 bg-red-50 rounded-xl outline-none focus:border-accent" value={product.costPrice} onChange={e => setProduct({...product, costPrice: e.target.value})} placeholder="سعر التكلفة" />
                         </div>
                         <input type="number" className="w-full p-3 border-2 border-gray-100 rounded-xl outline-none focus:border-accent bg-gray-50" value={product.oldPrice} onChange={e => setProduct({...product, oldPrice: e.target.value})} placeholder="سعر قديم" />
@@ -862,7 +818,6 @@ const Admin = () => {
                             <input type="file" multiple ref={fileInputRef} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleImagesChange} />
                             <div className="flex flex-col items-center text-gray-400 group-hover:text-accent"><Upload size={32} className="mb-2" /><span className="text-xs font-bold">اضغط لرفع الصور</span></div>
                         </div>
-                        {/* ✅ Image Sorting & Zoom Section */}
                         <div className="flex gap-2 overflow-x-auto pb-2 min-h-[90px]">
                             {product.imageUrls && product.imageUrls.map((url, idx) => (
                                 <div key={`old-${idx}`} className="relative group w-20 h-20 shrink-0 border border-gray-200 rounded-lg overflow-hidden">
@@ -894,7 +849,6 @@ const Admin = () => {
                     <tbody>
                         {products.map(p => (
                             <tr key={p.id} className="hover:bg-gray-50 transition-colors group border-t">
-                                {/* ✅ Full Image in Card + Hover Zoom */}
                                 <td className="p-4 w-24">
                                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shadow-sm border border-gray-200">
                                         <img src={p.image || 'https://via.placeholder.com/150'} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-150 origin-center" />
@@ -939,7 +893,6 @@ const Admin = () => {
              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {categories.map(c => (
                     <div key={c.id} className="flex flex-col items-center p-4 bg-gray-50 rounded-2xl border border-gray-200 hover:border-accent group relative transition-all">
-                        {/* ✅ Category Image Full Cover + Zoom */}
                         <div className="w-16 h-16 rounded-full overflow-hidden bg-white border border-gray-200 mb-2 shadow-sm relative">
                             {c.imageUrl ? (
                                 <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-125" />
@@ -954,8 +907,6 @@ const Admin = () => {
              </div>
           </div>
         )}
-
-        {/* ✅ Promo Codes Tab */}
         {activeTab === 'promos' && (
           <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-lg border border-gray-100 p-8">
              <h2 className="text-2xl font-bold text-primary mb-6 flex items-center gap-2 border-b pb-4"><TicketPercent className="text-accent" /> أكواد الخصم</h2>

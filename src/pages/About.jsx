@@ -36,8 +36,6 @@ const About = () => {
                 </p>
             </div>
           </div>
-
-          {/* Image Side - ✅ صورة مناسبة من الإنترنت */}
           <div className="flex-1 w-full h-full">
             <img 
               src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1000&auto=format&fit=crop" 

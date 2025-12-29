@@ -4,7 +4,7 @@ import { ArrowRight, ShoppingBag, Truck, ShieldCheck, Headset, ArrowUpRight, Zap
 import { Link } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, getDocs, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
-import BestSellers from '../components/BestSellers'; // ✅ استيراد
+import BestSellers from '../components/BestSellers'; 
 
 // --- مكونات UI ---
 
@@ -222,7 +222,6 @@ const Home = () => {
                     initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                     className="group bg-white rounded-[1.5rem] p-4 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-50"
                   >
-                    {/* ✅ التعديل تم هنا في الصورة */}
                     <div className="relative aspect-[3/4] mb-4 overflow-hidden rounded-[1rem] bg-gray-50">
                         <img 
                             src={product.image} 

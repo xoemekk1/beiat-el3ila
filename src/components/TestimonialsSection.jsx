@@ -11,15 +11,10 @@ const TestimonialsSection = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. جلب التقييمات اليدوية (Screenshots)
         const siteReviewsSnap = await getDocs(query(collection(db, "site_reviews"), orderBy("createdAt", "desc")));
         const siteReviews = siteReviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), isManual: true }));
-
-        // 2. جلب أفضل تقييمات المنتجات (5 نجوم فقط)
         const productReviewsSnap = await getDocs(query(collection(db, "reviews"), where("rating", "==", 5), limit(10)));
         const productReviews = productReviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), isManual: false }));
-
-        // 3. دمجهم وخلطهم عشوائياً
         const combined = [...siteReviews, ...productReviews].sort(() => 0.5 - Math.random());
         setReviews(combined);
       } catch (err) {
@@ -37,7 +32,6 @@ const TestimonialsSection = () => {
 
   return (
     <section className="py-24 bg-gray-50 overflow-hidden relative" dir="rtl">
-      {/* خلفية جمالية خفيفة */}
       <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
 
       <div className="container mx-auto px-6 relative z-10">
@@ -46,8 +40,6 @@ const TestimonialsSection = () => {
           <h2 className="text-4xl md:text-5xl font-black text-gray-900 mt-4 leading-tight">تجارب عملاء <span className="text-[#D4AF37]">بيت العيلة</span></h2>
           <p className="text-gray-500 mt-4 max-w-2xl mx-auto">ثقتكم هي سر نجاحنا. إليكم بعض مما قاله عملاؤنا المميزون.</p>
         </div>
-
-        {/* شبكة العرض */}
         <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
           {reviews.map((rev, index) => (
             <motion.div 
@@ -58,7 +50,6 @@ const TestimonialsSection = () => {
               viewport={{ once: true }}
               className="break-inside-avoid bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
             >
-              {/* Header */}
               <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-4">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg font-black text-gray-400">

@@ -16,20 +16,15 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true);
   const [relatedProducts, setRelatedProducts] = useState([]); 
   const [relatedLoading, setRelatedLoading] = useState(true); 
-
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [timeLeft, setTimeLeft] = useState(null);
   const [isExpired, setIsExpired] = useState(false);
-
-  // ✅ 1. حالة جديدة لتتبع إحداثيات الزوم
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
-
   const { addToCart, toggleWishlist, isInWishlist } = useCart();
 
-  // 1. جلب المنتج الأساسي
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -58,7 +53,6 @@ const ProductDetails = () => {
     return () => unsub();
   }, [id]);
 
-  // 2. جلب المنتجات ذات الصلة
   useEffect(() => {
     if (!product || !product.category) return;
 
@@ -87,7 +81,6 @@ const ProductDetails = () => {
     fetchRelated();
   }, [product]); 
 
-  // 3. التايمر
   useEffect(() => {
     if (!product?.discountEnd) return;
     const calculateTime = () => {
@@ -108,16 +101,13 @@ const ProductDetails = () => {
     return () => clearInterval(interval);
   }, [product]);
 
-  // ✅ 4. دالة التعامل مع حركة الماوس للزوم
   const handleMouseMove = (e) => {
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
-    // حساب النسبة المئوية لمكان الماوس داخل الصورة
     const x = ((e.clientX - left) / width) * 100;
     const y = ((e.clientY - top) / height) * 100;
     setZoomPos({ x, y });
   };
 
-  // ✅ 5. إعادة الصورة لوضعها الطبيعي عند خروج الماوس
   const handleMouseLeave = () => {
     setZoomPos({ x: 50, y: 50 });
   };
@@ -163,7 +153,6 @@ const ProductDetails = () => {
             {/* Gallery */}
             <div className="p-6 lg:p-10 bg-gray-50 flex flex-col items-center">
                
-               {/* ✅ منطقة الصورة الرئيسية المعدلة (Full Cover + Zoom) */}
                <motion.div 
                  key={activeImage} 
                  initial={{ opacity: 0 }} 

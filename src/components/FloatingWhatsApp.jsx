@@ -2,7 +2,6 @@ import React from 'react';
 import { MessageCircle } from 'lucide-react';
 
 const FloatingWhatsApp = () => {
-  // 🔴 هام: ضع رقمك هنا بصيغة دولية بدون + (مثال: 201000000000)
   const phoneNumber = "201029315300"   ;
   const message = "مرحباً، لدي استفسار بخصوص منتجات بيت العيلة...";
 
@@ -16,9 +15,7 @@ const FloatingWhatsApp = () => {
       title="تواصل معنا عبر واتساب"
     >
       <MessageCircle size={32} className="fill-white text-white group-hover:rotate-12 transition-transform duration-300" />
-      
-      {/* Tooltip صغير يظهر بجانب الزر */}
-      <span className="absolute right-full mr-3 bg-gray-900 text-white text-xs py-1 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            <span className="absolute right-full mr-3 bg-gray-900 text-white text-xs py-1 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
         تواصل معنا
       </span>
     </a>
